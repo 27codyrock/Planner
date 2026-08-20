@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Fall 2026 Planner</title>
+<title>Education Planner</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#26241f">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -64,7 +64,7 @@
     -webkit-font-smoothing:antialiased;
     line-height:1.45;
   }
-  .wrap{max-width:960px;margin:0 auto;padding:28px 20px 80px;transition:max-width .15s;}
+  .wrap{max-width:960px;margin:0 auto;padding:calc(28px + env(safe-area-inset-top)) 20px 80px;transition:max-width .15s;}
   .wrap.wide{max-width:1180px;}
 
   @keyframes fadeInUp{
@@ -82,9 +82,33 @@
   /* Welcome splash */
   body{margin:0;}
   .welcome-screen{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;
-    background:linear-gradient(150deg,var(--surface-2),var(--bg) 60%);transition:opacity .5s ease, visibility .5s ease;}
+    background:linear-gradient(150deg,var(--surface-2),var(--bg) 60%);
+    transition:opacity .5s ease, visibility .5s ease, -webkit-clip-path .68s cubic-bezier(.65,0,.35,1), clip-path .68s cubic-bezier(.65,0,.35,1);
+    -webkit-clip-path:circle(150% at var(--iris-x,50%) var(--iris-y,50%));
+    clip-path:circle(150% at var(--iris-x,50%) var(--iris-y,50%));}
   .welcome-screen.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+  .welcome-screen.iris-out{
+    -webkit-clip-path:circle(0% at var(--iris-x,50%) var(--iris-y,50%));
+    clip-path:circle(0% at var(--iris-x,50%) var(--iris-y,50%));
+  }
   .welcome-inner{text-align:center;padding:20px;max-width:420px;animation:fadeInUp .7s cubic-bezier(.22,.61,.36,1) both;}
+  @keyframes welcomeContentPunch{
+    0%{transform:scale(1);opacity:1;}
+    30%{transform:scale(1.06);opacity:1;}
+    100%{transform:scale(.82);opacity:0;}
+  }
+  .welcome-screen.iris-out .welcome-inner{animation:welcomeContentPunch .48s cubic-bezier(.4,0,.2,1) both;}
+  @keyframes wrapReveal{
+    0%{transform:scale(.96);}
+    55%{transform:scale(1.008);}
+    100%{transform:scale(1);}
+  }
+  .wrap.reveal{animation:wrapReveal .6s cubic-bezier(.22,.61,.36,1) both;}
+  @media (prefers-reduced-motion: reduce){
+    .welcome-screen{transition:opacity .5s ease, visibility .5s ease;-webkit-clip-path:none;clip-path:none;}
+    .welcome-screen.iris-out .welcome-inner{animation:none;}
+    .wrap.reveal{animation:none;}
+  }
   .welcome-kicker{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--text-faint);font-weight:700;margin-bottom:14px;}
   .welcome-title{font-size:46px;font-weight:750;letter-spacing:-0.02em;color:var(--text);margin:0 0 10px;}
   .welcome-sub{font-size:14.5px;color:var(--text-dim);margin-bottom:32px;line-height:1.5;}
@@ -128,6 +152,13 @@
   .stat .lbl{font-size:11.5px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.04em;margin-top:2px;}
   .progress-bar{height:8px;background:var(--border);border-radius:99px;overflow:hidden;margin-top:10px;}
   .progress-fill{height:100%;background:var(--accent-strong);border-radius:99px;transition:width .3s ease;}
+
+  .course-deadline-strip{display:flex;gap:8px;overflow-x:auto;margin:-4px 0 20px;padding:4px 2px 6px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+  .course-deadline-strip::-webkit-scrollbar{display:none;}
+  .course-deadline-chip{flex:none;display:flex;align-items:center;gap:7px;border:1px solid var(--glass-border);border-left:3px solid var(--c,var(--accent-strong));background:linear-gradient(155deg, var(--glass-bg), var(--glass-bg-2));-webkit-backdrop-filter:blur(14px) saturate(160%);backdrop-filter:blur(14px) saturate(160%);border-radius:99px;padding:7px 14px 7px 11px;cursor:pointer;font-family:inherit;box-shadow:inset 0 1px 0 var(--glass-highlight);transition:transform .12s;white-space:nowrap;}
+  .course-deadline-chip:hover{transform:translateY(-1px);}
+  .course-deadline-chip .cdc-course{font-size:11px;font-weight:800;color:var(--text);letter-spacing:.02em;}
+  .course-deadline-chip .cdc-label{font-size:11px;color:var(--text-dim);font-weight:600;}
 
   .nextup{background:linear-gradient(155deg, var(--glass-bg-2), var(--glass-bg));-webkit-backdrop-filter:blur(16px) saturate(160%);backdrop-filter:blur(16px) saturate(160%);border:1px solid var(--glass-border);border-radius:var(--radius);padding:16px 18px;margin-bottom:22px;box-shadow:var(--glass-shadow), inset 0 1px 0 var(--glass-highlight);}
   .nextup h2{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-dim);margin:0 0 10px;}
@@ -229,15 +260,19 @@
   .week-strip .wcell.selected .wdot{background:var(--surface);opacity:.85;}
 
   /* Vertical dynamic timeline (Day view) */
-  .timeline{position:relative;padding:6px 2px 4px;}
-  .tl-spine{position:absolute;left:23px;top:26px;bottom:26px;width:2px;background:linear-gradient(var(--glass-border), var(--border), var(--glass-border));z-index:0;}
+  .timeline{display:flex;align-items:stretch;gap:2px;padding:6px 2px 4px;}
+  .tl-axis{width:44px;flex:none;position:relative;}
+  .tl-axis-label{position:absolute;left:0;right:6px;top:0;text-align:right;font-size:10.5px;color:var(--text-faint);font-weight:600;transform:translateY(-50%);white-space:nowrap;}
+  .tl-axis-label.now{color:var(--danger);font-weight:800;font-size:12px;}
+  .tl-track{position:relative;flex:1;min-width:0;}
+  .tl-spine{position:absolute;left:22px;top:26px;bottom:26px;width:2px;background:linear-gradient(var(--glass-border), var(--border), var(--glass-border));z-index:0;}
   .tl-row{position:relative;z-index:1;display:flex;align-items:flex-start;gap:14px;margin-bottom:16px;}
   .tl-now{position:relative;z-index:1;display:flex;align-items:center;gap:14px;margin:-6px 0 16px;}
   .tl-now .tl-now-dot{width:14px;height:14px;border-radius:50%;background:var(--danger);margin-left:15px;box-shadow:0 0 0 4px color-mix(in srgb, var(--danger) 25%, transparent);flex:none;}
   .tl-now .tl-now-label{font-size:11px;font-weight:700;color:var(--danger);text-transform:uppercase;letter-spacing:.04em;}
   .tl-rail{width:44px;flex:none;display:flex;justify-content:center;}
-  .tl-node{border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:var(--glass-shadow), inset 0 1px 0 rgba(255,255,255,0.45);border:1px solid rgba(255,255,255,0.35);-webkit-backdrop-filter:blur(10px) saturate(170%);backdrop-filter:blur(10px) saturate(170%);cursor:pointer;transition:transform .15s;}
-  .tl-node.tl-pill{border-radius:22px;height:auto;min-height:44px;padding:11px 0;}
+  .tl-node{border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:var(--glass-shadow), inset 0 1px 0 rgba(255,255,255,0.45);border:1px solid rgba(255,255,255,0.35);-webkit-backdrop-filter:blur(10px) saturate(170%);backdrop-filter:blur(10px) saturate(170%);cursor:pointer;transition:transform .15s;overflow:hidden;}
+  .tl-node.tl-pill{border-radius:22px;height:auto;min-height:44px;padding:11px 0 11px;align-items:flex-start;justify-content:center;}
   .tl-node:hover{transform:translateY(-1px);}
   .tl-node svg{width:19px;height:19px;flex:none;}
   .tl-node.done{opacity:.5;}
@@ -262,17 +297,28 @@
   /* Month view */
   .month-nav{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
   .month-title{font-size:17px;font-weight:700;flex:1;text-align:center;}
-  .month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
-  .dow{text-align:center;font-size:11px;font-weight:700;color:var(--text-faint);text-transform:uppercase;padding-bottom:4px;}
-  .mday{background:linear-gradient(155deg, var(--glass-bg), var(--glass-bg-2));-webkit-backdrop-filter:blur(12px) saturate(160%);backdrop-filter:blur(12px) saturate(160%);border:1px solid var(--glass-border);border-radius:10px;min-height:132px;padding:6px 7px;cursor:pointer;box-shadow:inset 0 1px 0 var(--glass-highlight);transition:background .12s;display:flex;flex-direction:column;}
+  /* min-width:0 down this whole chain stops long unwrapped event titles from forcing the
+     grid's `fr` columns wider than the viewport — the classic CSS Grid overflow trap where
+     a child's content-based intrinsic width wins over its track size unless overridden. */
+  .month-grid{display:grid;grid-template-columns:repeat(7, minmax(0, 1fr));gap:4px;min-width:0;}
+  .dow{text-align:center;font-size:10.5px;font-weight:700;color:var(--text-faint);text-transform:uppercase;padding-bottom:4px;min-width:0;}
+  .mday{min-width:0;background:linear-gradient(155deg, var(--glass-bg), var(--glass-bg-2));-webkit-backdrop-filter:blur(12px) saturate(160%);backdrop-filter:blur(12px) saturate(160%);border:1px solid var(--glass-border);border-radius:10px;min-height:112px;padding:5px 4px;cursor:pointer;box-shadow:inset 0 1px 0 var(--glass-highlight);transition:background .12s;display:flex;flex-direction:column;}
   .mday:hover{background:var(--accent-soft);}
   .mday.other{opacity:.35;}
   .mday.today{border-color:var(--accent-strong);border-width:2px;}
-  .mday .dn{font-size:12px;font-weight:700;margin-bottom:4px;flex:none;}
-  .mday .mitems{display:flex;flex-direction:column;gap:2px;overflow:hidden;flex:1;}
-  .mday .mitem{font-size:10px;line-height:1.35;font-weight:600;color:#fff;padding:1.5px 5px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:none;border:1px solid rgba(255,255,255,0.25);}
+  .mday .dn{font-size:11px;font-weight:700;margin-bottom:3px;flex:none;}
+  .mday .mitems{display:flex;flex-direction:column;gap:2px;overflow:hidden;flex:1;min-width:0;}
+  .mday .mitem{min-width:0;display:flex;align-items:center;gap:3px;font-size:9px;line-height:1.35;font-weight:600;color:#fff;padding:1.5px 4px;border-radius:4px;flex:none;border:1px solid rgba(255,255,255,0.25);cursor:pointer;}
   .mday .mitem.faint{opacity:.55;}
-  .mday .more{font-size:9.5px;color:var(--text-faint);margin-top:2px;flex:none;}
+  .mday .mitem-cb{flex:none;width:8px;height:8px;border-radius:50%;border:1.3px solid rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;}
+  .mday .mitem.faint .mitem-cb{background:#fff;}
+  .mday .mitem-cb svg{width:6px;height:6px;stroke:#2a2a28;stroke-width:4;fill:none;}
+  .mday .mitem-t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .mday .more{font-size:9px;color:var(--text-faint);margin-top:2px;flex:none;}
+  @media (max-width: 480px){
+    .mday{min-height:96px;padding:4px 3px;}
+    .mday .mitem{font-size:8.5px;padding:1px 3px;}
+  }
 
   /* Modal */
   .modal-bg{position:fixed;inset:0;background:var(--glass-scrim);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;animation:glassFadeIn .22s ease both;}
@@ -326,6 +372,10 @@
   .icon-swatch svg{width:16px;height:16px;pointer-events:none;}
   .icon-swatch:hover{transform:translateY(-1px);}
   .icon-swatch.selected{border-color:var(--accent-strong);}
+  .weekday-picker{display:flex;flex-wrap:wrap;gap:6px;}
+  .weekday-chip{border:1px solid var(--border);background:var(--surface);color:var(--text-dim);font-size:12px;font-weight:700;width:38px;height:32px;border-radius:8px;cursor:pointer;transition:background .12s,color .12s,border-color .12s;}
+  .weekday-chip:hover{border-color:var(--accent-strong);}
+  .weekday-chip.selected{background:var(--accent-strong);color:var(--surface);border-color:var(--accent-strong);}
   .field-row{display:flex;gap:10px;}
   .field-row .field{flex:1;}
   .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;}
@@ -404,7 +454,7 @@
 </div>
 <div class="wrap" id="appWrap">
   <header class="top">
-    <h1 id="plannerTitle">Fall 2026 Planner</h1>
+    <h1 id="plannerTitle">Education Planner</h1>
     <div class="sub" id="plannerSubtitle">Your classes, assignments, and study plan — all in one place.</div>
   </header>
 
@@ -421,6 +471,7 @@
     <div class="quote-strip" id="quoteStrip"></div>
     <div class="reflect-grid" id="reflectGrid"></div>
     <div class="stats" id="homeStats"></div>
+    <div class="course-deadline-strip" id="homeCourseDeadlines"></div>
     <div class="home-section">
       <div class="home-section-head">
         <h2 id="homeTodayHead">Today</h2>
@@ -1092,6 +1143,7 @@ function renderHome(){
       <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
     </div>
   `;
+  renderHomeCourseDeadlines();
 
   const todayEl = document.getElementById("homeToday");
   todayEl.innerHTML = "";
@@ -1121,6 +1173,51 @@ function renderHome(){
       </div>
     `).join("") + `</div>`;
   }
+}
+// The "big rocks" worth surfacing per-course on Home — deliberately excludes routine
+// New Content/Active Recall/Study Block/Work Session items so this stays compact.
+const HOME_DEADLINE_CATS = ["EXAM", "Project Due", "Lab Due", "Exam Window Opens", "Quiz Due", "Recitation Due", "Homework Due", "Assignment Due"];
+const HOME_DEADLINE_SHORT = {
+  "EXAM": "Exam", "Project Due": "Project", "Lab Due": "Lab", "Exam Window Opens": "Window opens",
+  "Quiz Due": "Quiz", "Recitation Due": "Recitation", "Homework Due": "HW", "Assignment Due": "Assignment"
+};
+// One compact chip per course showing its single soonest "big" deadline (exam, project,
+// lab, quiz, etc.) so you can see at a glance which class needs attention next — without
+// listing every course's whole deadline queue and crowding the homepage.
+function renderHomeCourseDeadlines(){
+  const el = document.getElementById("homeCourseDeadlines");
+  if (!el) return;
+  const items = allItems();
+  const chips = (BASE_DATA.courses || []).map(course => {
+    const upcoming = items
+      .filter(it => it.course === course.id && HOME_DEADLINE_CATS.includes(it.category) && daysUntil(it.date) >= 0)
+      .sort((a, b) => a.date.localeCompare(b.date))[0];
+    if (!upcoming) return "";
+    const d = daysUntil(upcoming.date);
+    const dayWord = d === 0 ? "today" : d === 1 ? "in 1 day" : `in ${d} days`;
+    return `
+      <button type="button" class="course-deadline-chip" data-course="${course.id}" data-date="${upcoming.date}" style="--c:${upcoming.color}">
+        <span class="cdc-course">${courseLabel(course.id) || course.id}</span>
+        <span class="cdc-label">${HOME_DEADLINE_SHORT[upcoming.category] || upcoming.category} ${dayWord}</span>
+      </button>
+    `;
+  }).join("");
+  el.innerHTML = chips;
+  el.querySelectorAll(".course-deadline-chip").forEach(chip => {
+    chip.onclick = () => {
+      const courseId = chip.dataset.course;
+      const date = chip.dataset.date;
+      const scope = scopeRegistry["course-" + courseId];
+      switchTab("course-" + courseId);
+      if (scope){
+        scope.currentDay = date;
+        showCourseSubTab(courseId, "day");
+        renderScopedDayTab(scope);
+      } else {
+        showCourseSubTab(courseId, "exams");
+      }
+    };
+  });
 }
 function renderNextUp(){
   const upcoming = allItems()
@@ -1179,11 +1276,11 @@ const TL_ICON_SVG = {
 };
 const TL_ICON_ORDER = ["book","zap","clock","brain","pencil","flag","door","alert","sun","flask","star","heart","coffee","dumbbell","moon","target","music","rocket","trophy","check","dot"];
 function timelineIconSvg(it){
-  const key = iconOverrides[it.id] || CATEGORY_ICON_KEY[it.category] || "dot";
+  const key = iconOverrides[it.seriesId || it.id] || CATEGORY_ICON_KEY[it.category] || "dot";
   return TL_ICON_SVG[key] || TL_ICON_SVG.dot;
 }
 function tlPillHeight(durMin){
-  return Math.max(48, Math.min(210, Math.round(40 + durMin*0.34)));
+  return Math.max(50, Math.min(380, Math.round(38 + durMin*0.62)));
 }
 function buildNowMarker(){
   const el = document.createElement("div");
@@ -1191,10 +1288,23 @@ function buildNowMarker(){
   el.innerHTML = `<div class="tl-now-dot"></div><div class="tl-now-label">Now</div>`;
   return el;
 }
+function shortTimeLabel(min){
+  return minutesToLabel(min).replace(/\s?(AM|PM)$/, "");
+}
+function fmtRemaining(min){
+  min = Math.max(min, 0);
+  const h = Math.floor(min / 60), m = Math.round(min % 60);
+  if (h <= 0) return `${m}m remaining`;
+  return `${h}h ${String(m).padStart(2,"0")}m remaining`;
+}
 /* Renders a dynamic vertical timeline: items are laid out sequentially in start-time
-   order, sized loosely by duration (capped so long blocks don't dominate), with the
-   gaps between them collapsed to a fixed connector instead of being time-proportional —
-   so empty stretches of the day don't take up space. */
+   order, sized loosely by duration (longer tasks stretch taller, capped so nothing
+   explodes off-screen), with the gaps between them collapsed to a fixed connector
+   instead of being time-proportional — so empty stretches of the day don't take up
+   space. A left-hand axis shows dynamic time markers (start/end of each block, plus
+   hour ticks through long ones) aligned pixel-for-pixel with the rail via a
+   post-render measurement pass, and the item currently in progress gets a
+   top-to-bottom color fade showing how far through it we are. */
 function renderTimelineInto(container, items, dateIso, az){
   container.innerHTML = "";
   const scheduled = items.filter(it => it.scheduled !== false)
@@ -1204,17 +1314,31 @@ function renderTimelineInto(container, items, dateIso, az){
     container.innerHTML = `<div class="empty-state">Nothing scheduled for this day.</div>`;
     return;
   }
+  const axis = document.createElement("div");
+  axis.className = "tl-axis";
+  const track = document.createElement("div");
+  track.className = "tl-track";
+  container.appendChild(axis);
+  container.appendChild(track);
+
   const spine = document.createElement("div");
   spine.className = "tl-spine";
-  container.appendChild(spine);
+  track.appendChild(spine);
+
   const isToday = az.iso === dateIso;
   let nowInserted = false;
+  const axisTicks = []; // {min, el} — node/pill elements to measure after layout, plus the value to label
+  let nowRowEl = null;
+
   scheduled.forEach(({it, start, dur}) => {
+    const end = start + dur;
+    const isActive = isToday && az.minutes >= start && az.minutes < end;
+    if (isActive) nowInserted = true; // the active item's own fade + axis tick stands in for the marker row
     if (isToday && !nowInserted && az.minutes < start){
-      container.appendChild(buildNowMarker());
+      nowRowEl = buildNowMarker();
+      track.appendChild(nowRowEl);
       nowInserted = true;
     }
-    const end = start + dur;
     const isDone = !!doneMap[it.id];
     const isPast = isItemPast(dateIso, end, az);
     const isPoint = dur <= 25;
@@ -1222,16 +1346,27 @@ function renderTimelineInto(container, items, dateIso, az){
     const cLabel = courseLabel(it.course);
     const row = document.createElement("div");
     row.className = "tl-row";
+    const pillPx = tlPillHeight(dur);
+    let nodeBg = `color-mix(in srgb, ${it.color} 82%, transparent)`;
+    if (isActive && !isPoint && !isDone){
+      const pct = Math.max(0, Math.min(100, Math.round(((az.minutes - start) / dur) * 100)));
+      nodeBg = `linear-gradient(to bottom,
+        color-mix(in srgb, ${it.color} 82%, transparent) 0%,
+        color-mix(in srgb, ${it.color} 82%, transparent) ${pct}%,
+        color-mix(in srgb, var(--text-faint) 55%, transparent) ${Math.min(pct + 16, 100)}%,
+        color-mix(in srgb, var(--text-faint) 30%, transparent) 100%)`;
+    }
+    const timeText = isActive && !isPoint ? fmtRemaining(end - az.minutes) : `${minutesToLabel(start)}${dur > 25 ? ` – ${minutesToLabel(end)}` : ""}`;
     row.innerHTML = `
       <div class="tl-rail">
-        <div class="tl-node${isPoint ? '' : ' tl-pill'}${isDone ? ' done' : ''}${isPast && !isDone ? ' past' : ''}"
-             style="background:color-mix(in srgb, ${it.color} 82%, transparent);${isPoint ? '' : `min-height:${tlPillHeight(dur)}px;`}"
+        <div class="tl-node${isPoint ? '' : ' tl-pill'}${isDone ? ' done' : ''}${isPast && !isDone ? ' past' : ''}${isActive ? ' active' : ''}"
+             style="background:${nodeBg};${isPoint ? '' : `min-height:${pillPx}px;`}"
              title="Toggle complete">${timelineIconSvg(it)}</div>
       </div>
       <div class="tl-content">
         <div class="tl-toprow">
           <div class="tl-info">
-            <div class="tl-time">${minutesToLabel(start)}${dur > 25 ? ` – ${minutesToLabel(end)}` : ""}${it.repeat && it.repeat !== "none" ? ' <span class="refresh">↻</span>' : ''}</div>
+            <div class="tl-time">${timeText}${it.repeat && it.repeat !== "none" ? ' <span class="refresh">↻</span>' : ''}</div>
             <div class="tl-title${isDone ? ' done' : ''}">${it.title}</div>
             ${it.details ? `<div class="tl-sub">${it.details}</div>` : ""}
             ${cLabel ? `<span class="course-tag">${cLabel}</span>` : ""}
@@ -1242,14 +1377,60 @@ function renderTimelineInto(container, items, dateIso, az){
         </div>
       </div>
     `;
-    row.querySelector(".tl-node").onclick = (ev) => { ev.stopPropagation(); toggleDone(it.id, ev); };
+    const nodeEl = row.querySelector(".tl-node");
+    nodeEl.onclick = (ev) => { ev.stopPropagation(); toggleDone(it.id, ev); };
     row.querySelector(".tl-check").onclick = (ev) => { ev.stopPropagation(); toggleDone(it.id, ev); };
     row.querySelector(".tl-edit").onclick = (ev) => { ev.stopPropagation(); openEditModal(it); };
     const delIc = row.querySelector(".tl-del");
     if (delIc) delIc.onclick = (ev) => { ev.stopPropagation(); deleteCustomItem(it.id); };
-    container.appendChild(row);
+    track.appendChild(row);
+    axisTicks.push({ nodeEl, start, end, dur, isPoint, isActive });
   });
-  if (isToday && !nowInserted) container.appendChild(buildNowMarker());
+  if (isToday && !nowInserted){
+    nowRowEl = buildNowMarker();
+    track.appendChild(nowRowEl);
+  }
+
+  // Post-render measurement pass: place dynamic axis labels at the real pixel
+  // position of each node's top/bottom edge, so they line up perfectly with the
+  // rail regardless of how tall any given row's wrapped text turns out to be.
+  const axisRect = axis.getBoundingClientRect();
+  const seenY = new Set();
+  const addLabel = (min, y, isNow) => {
+    const key = Math.round(y / 10);
+    if (seenY.has(key)) return;
+    seenY.add(key);
+    const lab = document.createElement("div");
+    lab.className = "tl-axis-label" + (isNow ? " now" : "");
+    lab.style.top = y + "px";
+    lab.textContent = shortTimeLabel(min);
+    axis.appendChild(lab);
+  };
+  axisTicks.forEach(({ nodeEl, start, end, dur, isPoint }) => {
+    const r = nodeEl.getBoundingClientRect();
+    const topY = r.top - axisRect.top;
+    const botY = r.bottom - axisRect.top;
+    addLabel(start, topY);
+    if (!isPoint && botY - topY >= 70) addLabel(end, botY);
+    if (!isPoint && botY - topY >= 150){
+      const firstHour = Math.ceil(start / 60) * 60;
+      for (let m = firstHour; m < end; m += 60){
+        if (m - start < 40 || end - m < 40) continue;
+        const y = topY + ((m - start) / dur) * (botY - topY);
+        addLabel(m, y);
+      }
+    }
+  });
+  if (nowRowEl){
+    const r = nowRowEl.getBoundingClientRect();
+    addLabel(az.minutes, r.top - axisRect.top + r.height / 2, true);
+  }
+  const activeTick = axisTicks.find(t => t.isActive);
+  if (activeTick){
+    const r = activeTick.nodeEl.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (az.minutes - activeTick.start) / activeTick.dur));
+    addLabel(az.minutes, (r.top - axisRect.top) + pct * r.height, true);
+  }
 }
 function layoutOverlaps(events){
   const sorted = events.slice().sort((a,b)=> a._start - b._start);
@@ -1363,9 +1544,23 @@ function monthCellItemsHtml(dayItems){
   const shown = sorted.slice(0, MONTH_MAX_ITEMS);
   const extra = sorted.length - shown.length;
   return `
-    <div class="mitems">${shown.map(it => `<div class="mitem${doneMap[it.id] ? ' faint' : ''}" style="background:color-mix(in srgb, ${it.color} 82%, transparent)" title="${it.title}">${it.title}</div>`).join("")}</div>
+    <div class="mitems">${shown.map(it => `
+      <div class="mitem${doneMap[it.id] ? ' faint' : ''}" data-id="${it.id}" style="background:color-mix(in srgb, ${it.color} 82%, transparent)" title="${it.title}">
+        <span class="mitem-cb">${doneMap[it.id] ? checkIcon() : ''}</span><span class="mitem-t">${it.title}</span>
+      </div>
+    `).join("")}</div>
     ${extra > 0 ? `<div class="more">+${extra} more</div>` : ''}
   `;
+}
+// Wires the little checkbox dot on each month-cell chip to toggle done — shared by both the
+// global Month tab and every per-course Monthly Agenda grid, since they all render the same
+// monthCellItemsHtml() markup and all read/write the same doneMap, so a check here is instantly
+// reflected everywhere else (Day timeline, Agenda list, Home) via the normal renderAll() pass.
+function wireMonthCellCheckboxes(grid){
+  grid.querySelectorAll(".mitem-cb").forEach(cb => {
+    const mitemEl = cb.closest(".mitem");
+    cb.onclick = (ev) => { ev.stopPropagation(); toggleDone(mitemEl.dataset.id, ev); };
+  });
 }
 function renderMonthTab(){
   const {y, m} = currentMonth;
@@ -1401,6 +1596,7 @@ function renderMonthTab(){
     grid.appendChild(cell);
     if (i === 41) break;
   }
+  wireMonthCellCheckboxes(grid);
 }
 function shiftMonth(delta){
   let {y, m} = currentMonth;
@@ -1500,6 +1696,7 @@ function renderScopedMonthTab(scope){
     grid.appendChild(cell);
     if (i === 41) break;
   }
+  wireMonthCellCheckboxes(grid);
 }
 function shiftScopedMonth(scope, delta){
   let {y, m} = scope.currentMonth;
@@ -1541,6 +1738,13 @@ function showCourseSubTab(courseId, subName){
   if (!panel) return;
   panel.querySelectorAll(".subtab-btn").forEach(b => b.classList.toggle("active", b.dataset.sub === subName));
   panel.querySelectorAll(".subpanel").forEach(p => { p.style.display = (p.dataset.sub === subName) ? "" : "none"; });
+  // The Daily Agenda timeline measures pixel positions for its left-hand time axis after
+  // rendering, which only works while the panel is actually visible (a hidden/display:none
+  // panel measures everything as 0). Re-render it now that it's on-screen.
+  if (subName === "day"){
+    const scope = scopeRegistry["course-" + courseId];
+    if (scope) renderScopedDayGrid(scope);
+  }
 }
 function initCourseTabs(){
   const tabbar = document.getElementById("tabbar");
@@ -1552,7 +1756,14 @@ function initCourseTabs(){
     btn.className = "tab-btn";
     btn.dataset.tab = tabName;
     btn.textContent = course.shortLabel || course.course;
-    btn.onclick = () => switchTab(tabName);
+    btn.onclick = () => {
+      switchTab(tabName);
+      // If this course's Daily Agenda subtab is the one showing, re-render its timeline now
+      // that the panel is actually visible again (see note in showCourseSubTab).
+      const panel = document.getElementById("tab-" + tabName);
+      const daySub = panel && panel.querySelector('.subpanel[data-sub="day"]');
+      if (daySub && daySub.style.display !== "none") renderScopedDayGrid(scope);
+    };
     tabbar.appendChild(btn);
 
     const scope = createScope("course-" + id, it => it.course === id, id);
@@ -1713,7 +1924,7 @@ function hhmmToMin(s){
   return h*60+m;
 }
 function isoOfDate(d){ return d.toISOString().slice(0,10); }
-function generateRepeatSeries(anchorDateIso, repeatType){
+function generateRepeatSeries(anchorDateIso, repeatType, repeatDays){
   const out = [];
   const end = new Date(SEMESTER_END + "T00:00:00");
   let d = new Date(anchorDateIso + "T00:00:00");
@@ -1723,6 +1934,13 @@ function generateRepeatSeries(anchorDateIso, repeatType){
   } else if (repeatType === "daily"){
     d.setDate(d.getDate() + 1);
     while (d <= end){ out.push(isoOfDate(d)); d.setDate(d.getDate() + 1); }
+  } else if (repeatType === "custom"){
+    const days = (repeatDays && repeatDays.length) ? repeatDays : [d.getDay()];
+    d.setDate(d.getDate() + 1);
+    while (d <= end){
+      if (days.includes(d.getDay())) out.push(isoOfDate(d));
+      d.setDate(d.getDate() + 1);
+    }
   } else if (repeatType === "weekdays"){
     d.setDate(d.getDate() + 1);
     while (d <= end){
@@ -1736,12 +1954,14 @@ function generateRepeatSeries(anchorDateIso, repeatType){
 // (Re)generates the future occurrences of a repeating custom task from its anchor item.
 // Occurrences are materialized (plain independent copies) rather than computed live, so editing
 // or deleting one later never affects the others.
-function regenerateSeries(anchorItem, repeatType){
+function regenerateSeries(anchorItem, repeatType, repeatDays){
   customItems = customItems.filter(ci => !(ci.seriesId === anchorItem.id && ci.id !== anchorItem.id));
   if (repeatType && repeatType !== "none"){
     anchorItem.seriesId = anchorItem.id;
     anchorItem.repeat = repeatType;
-    generateRepeatSeries(anchorItem.date, repeatType).forEach((d, idx) => {
+    if (repeatType === "custom") anchorItem.repeatDays = repeatDays && repeatDays.length ? repeatDays : [new Date(anchorItem.date + "T00:00:00").getDay()];
+    else delete anchorItem.repeatDays;
+    generateRepeatSeries(anchorItem.date, repeatType, anchorItem.repeatDays).forEach((d, idx) => {
       customItems.push({
         id: "custom-" + Date.now() + "-" + idx + "-" + Math.floor(Math.random() * 1000),
         date: d, course: anchorItem.course, category: anchorItem.category, label: anchorItem.label,
@@ -1753,6 +1973,7 @@ function regenerateSeries(anchorItem, repeatType){
   } else {
     delete anchorItem.seriesId;
     delete anchorItem.repeat;
+    delete anchorItem.repeatDays;
   }
 }
 const REPEAT_OPTIONS = [
@@ -1760,9 +1981,34 @@ const REPEAT_OPTIONS = [
   { value: "daily", label: "Every day" },
   { value: "weekly", label: "Every week" },
   { value: "weekdays", label: "Every weekday (Mon–Fri)" },
+  { value: "custom", label: "Custom days of the week…" },
 ];
+const WEEKDAY_SHORT = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 function repeatOptionsHtml(selected){
   return REPEAT_OPTIONS.map(o => `<option value="${o.value}" ${o.value === selected ? "selected" : ""}>${o.label}</option>`).join("");
+}
+function weekdayPickerHtml(idPrefix, selectedDays){
+  const sel = new Set(selectedDays || []);
+  return `
+    <div class="field" id="${idPrefix}Wrap" style="display:none;">
+      <label>Repeat on</label>
+      <div class="weekday-picker" id="${idPrefix}Picker">
+        ${WEEKDAY_SHORT.map((lab, i) => `<button type="button" class="weekday-chip${sel.has(i) ? ' selected' : ''}" data-day="${i}">${lab}</button>`).join("")}
+      </div>
+    </div>
+  `;
+}
+function wireRepeatPicker(repeatSelId, wrapId, pickerId){
+  const repeatEl = document.getElementById(repeatSelId);
+  const wrapEl = document.getElementById(wrapId);
+  const pickerEl = document.getElementById(pickerId);
+  const sync = () => { wrapEl.style.display = repeatEl.value === "custom" ? "" : "none"; };
+  repeatEl.onchange = sync;
+  sync();
+  pickerEl.querySelectorAll(".weekday-chip").forEach(chip => {
+    chip.onclick = () => { chip.classList.toggle("selected"); playTap(); hapticTap(); };
+  });
+  return () => Array.from(pickerEl.querySelectorAll(".weekday-chip.selected")).map(c => parseInt(c.dataset.day, 10));
 }
 const CUSTOM_CAT_COLOR = "#7A7368";
 function openAddModal(scope){
@@ -1784,6 +2030,7 @@ function openAddModal(scope){
           <div class="field"><label>To</label><input type="time" id="mEnd" value="18:00"></div>
         </div>
         <div class="field"><label>Repeat</label><select id="mRepeat">${repeatOptionsHtml("none")}</select></div>
+        ${weekdayPickerHtml("mWd", [])}
         <div class="field"><label>Notes</label><textarea id="mNotes" placeholder="Optional details"></textarea></div>
         <div class="modal-actions">
           <button class="btn btn-secondary" id="mCancel">Cancel</button>
@@ -1797,6 +2044,7 @@ function openAddModal(scope){
   document.getElementById("mCat").onchange = (e) => {
     document.getElementById("mCatCustomWrap").style.display = e.target.value === "__custom__" ? "" : "none";
   };
+  const getMRepeatDays = wireRepeatPicker("mRepeat", "mWdWrap", "mWdPicker");
   document.getElementById("mSave").onclick = () => {
     const title = document.getElementById("mTitle").value.trim();
     if (!title) return;
@@ -1825,7 +2073,7 @@ function openAddModal(scope){
       title, details: notes, scheduled: true, defaultStart: start, defaultDuration: dur, custom: true
     };
     customItems.push(newItem);
-    regenerateSeries(newItem, repeat);
+    regenerateSeries(newItem, repeat, getMRepeatDays());
     persistCustom();
     closeModal();
     renderAll();
@@ -1843,9 +2091,10 @@ function openEditModal(it){
         </div>
   ` : "";
   const repeatRow = it.custom
-    ? `<div class="field"><label>Repeat</label><select id="eRepeat">${repeatOptionsHtml(it.repeat || "none")}</select></div>`
+    ? `<div class="field"><label>Repeat</label><select id="eRepeat">${repeatOptionsHtml(it.repeat || "none")}</select></div>${weekdayPickerHtml("eWd", it.repeatDays || [])}`
     : "";
-  let selectedIcon = iconOverrides[it.id] || CATEGORY_ICON_KEY[it.category] || "dot";
+  const iconKey = it.seriesId || it.id;
+  let selectedIcon = iconOverrides[iconKey] || CATEGORY_ICON_KEY[it.category] || "dot";
   const iconRow = isScheduled ? `
         <div class="field">
           <label>Timeline stencil</label>
@@ -1876,6 +2125,7 @@ function openEditModal(it){
   `;
   document.getElementById("modalBg").onclick = (e) => { if (e.target.id === "modalBg") closeModal(); };
   document.getElementById("eCancel").onclick = closeModal;
+  const getERepeatDays = document.getElementById("eRepeat") ? wireRepeatPicker("eRepeat", "eWdWrap", "eWdPicker") : null;
   const iconPickerEl = document.getElementById("eIconPicker");
   if (iconPickerEl){
     iconPickerEl.querySelectorAll(".icon-swatch").forEach(btn => {
@@ -1889,7 +2139,7 @@ function openEditModal(it){
   const resetBtn = document.getElementById("eReset");
   if (resetBtn) resetBtn.onclick = () => {
     delete overrides[it.id];
-    delete iconOverrides[it.id];
+    delete iconOverrides[iconKey];
     persistOverrides();
     persistIconOverrides();
     applyOverrides();
@@ -1910,7 +2160,7 @@ function openEditModal(it){
       it.title = newTitle; it.date = newDate;
       if (isScheduled) { it.defaultStart = s; it.defaultDuration = d; }
       if (document.getElementById("eRepeat")){
-        regenerateSeries(it, document.getElementById("eRepeat").value);
+        regenerateSeries(it, document.getElementById("eRepeat").value, getERepeatDays ? getERepeatDays() : []);
       }
       persistCustom();
     } else {
@@ -1921,9 +2171,11 @@ function openEditModal(it){
       applyOverrides();
     }
     if (isScheduled){
+      // Keyed by seriesId when this task is part of a repeating series, so changing the
+      // icon on any one occurrence relinks the icon for every occurrence in that series.
       const defaultIcon = CATEGORY_ICON_KEY[it.category] || "dot";
-      if (selectedIcon === defaultIcon) delete iconOverrides[it.id];
-      else iconOverrides[it.id] = selectedIcon;
+      if (selectedIcon === defaultIcon) delete iconOverrides[iconKey];
+      else iconOverrides[iconKey] = selectedIcon;
       persistIconOverrides();
     }
     closeModal();
@@ -2207,10 +2459,34 @@ if (hapticToggleBtnEl && navigator.vibrate){
   const az = nowInAZ();
   kicker.textContent = document.getElementById("plannerTitle").textContent;
   sub.textContent = `${fmtDateLong(az.iso)} — let's see what's on deck.`;
-  const dismiss = () => screen.classList.add("hidden");
-  btn.onclick = dismiss;
+  const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const dismiss = (ev) => {
+    if (screen.classList.contains("iris-out") || screen.classList.contains("hidden")) return;
+    const wrap = document.getElementById("appWrap");
+    if (reduceMotion){
+      screen.classList.add("hidden");
+      return;
+    }
+    // Iris-wipe the splash away from wherever the button actually is (works at any
+    // viewport size / orientation), popping the app in underneath as the hole opens.
+    const r = btn.getBoundingClientRect();
+    const ox = ev && ev.clientX != null ? ev.clientX : r.left + r.width / 2;
+    const oy = ev && ev.clientY != null ? ev.clientY : r.top + r.height / 2;
+    screen.style.setProperty("--iris-x", ox + "px");
+    screen.style.setProperty("--iris-y", oy + "px");
+    screen.classList.add("iris-out");
+    playDoneSound(); hapticDone();
+    confettiBurst(ox, oy);
+    if (wrap){
+      wrap.classList.remove("reveal");
+      void wrap.offsetWidth; // restart the animation if it somehow already ran
+      wrap.classList.add("reveal");
+    }
+    setTimeout(() => { screen.classList.add("hidden"); }, 700);
+  };
+  btn.onclick = (ev) => dismiss(ev);
   document.addEventListener("keydown", (e) => {
-    if ((e.key === "Enter" || e.key === " ") && !screen.classList.contains("hidden")) dismiss();
+    if ((e.key === "Enter" || e.key === " ") && !screen.classList.contains("hidden") && !screen.classList.contains("iris-out")) dismiss();
   });
 })();
 
